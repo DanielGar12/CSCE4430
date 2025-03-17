@@ -7,7 +7,7 @@ using namespace std;
 
 enum class nodeType {NUMBER, OPERATOR};
 
-class SynTreeNode {
+class SynTreeNode { // declares the ast
 
     public:
 
@@ -39,6 +39,10 @@ class Token {
 vector<Token> tokens;
 int tIndex = 0;
 
+SynTreeNode* termsParse();
+SynTreeNode* factorParse();
+SynTreeNode* expressionParse();
+
 void fileInput (const string &filename){
 
     string line;
@@ -56,12 +60,94 @@ void fileInput (const string &filename){
 
     file.close();
 }
+SynTreeNode* termsParse() { // matches for the terms
+    SynTreeNode* node = factorParse();
+
+    while (tIndex < tokens.size()) {
+        Token token = tokens[tIndex];
+
+        if(token.val == "/" || token.val == "*") {
+            tIndex++;
+            SynTreeNode* right = factorParse();
+            SynTreeNode* Node = new SynTreeNode(nodeType::OPERATOR, token.val);
+            Node->left = node;
+            Node->right = right;
+            node = Node;
+        }
+        else {
+            break;
+        }
+    }
+    return node;
+}
+
+
+SynTreeNode* expressionParse() { // to match an expression
+    SynTreeNode* node = termsParse(); 
+
+    while(tIndex < tokens.size()) {
+        Token token = tokens[tIndex];
+
+        if(token.val == "+" || token.val == "-") {
+            tIndex++;
+            SynTreeNode* right = termsParse();
+            SynTreeNode* Node = new SynTreeNode(nodeType::OPERATOR, token.val);
+            Node->left = node;
+            Node->right = right;
+            node = Node;
+        }
+        else{
+            break;
+        }
+    }
+    return node;
+}
+
+SynTreeNode* factorParse() { // matches the factors like ( )
+    Token token = tokens[tIndex];
+
+    if(token.type == "integer"){
+        tIndex++;
+        return new SynTreeNode(nodeType::NUMBER, token.val);
+
+    }
+
+    else if (token.val == "(") {
+        tIndex++;
+        SynTreeNode* node = expressionParse();
+        if (tokens[tIndex].val != ")"){
+            cout << "Syntax error: requires ')'" << endl;
+            exit(1);
+        }
+        tIndex++;
+        return node;
+    }
+    cout << "Syntax error: unexpected value " << token.val << endl;
+    exit(1);
+}
+
+void print(SynTreeNode* node, int height = 0){ // prints the ast 
+    if (!node){
+        return;
+    }
+
+    for (int i = 0; i < height; i++){
+        cout << " ";  
+    }
+    cout << node->val << endl;
+
+    print(node->left, height+ 1);
+    print(node->right, height+ 1);
+}
+
 
 
 int main() {
 
     fileInput("results.txt");
-    cout << "Hello" << endl; // test delete later
+    SynTreeNode* rootNode = expressionParse();
+    cout << "AST: " << endl;
+    print(rootNode);
 
     return 0;
 }

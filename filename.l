@@ -1,7 +1,9 @@
 %{
 	/*To find whether given letter is a vowel or not*/
-#undef yywrap
-#define yywrap() 1
+// #undef yywrap
+// #define yywrap() 1
+
+int yywrap() {return 1;}
 
 %}
 
@@ -46,12 +48,12 @@
 
 %%
 
-main()
+int main()
 {
 	FILE* file;
 	file = fopen("test.txt", "r");
 	yyin = file;
-	printf("%s",yyin);
+	// printf("%s",yyin);
 	FILE* sfile;
 	sfile = fopen("results.txt", "w");
 	yylex();
