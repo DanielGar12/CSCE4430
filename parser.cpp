@@ -60,7 +60,7 @@ void fileInput (const string &filename){
 
     file.close();
 }
-SynTreeNode* termsParse() { // matches for the terms
+SynTreeNode* termsParse() { // matches for the multiplcation and division
     SynTreeNode* node = factorParse();
 
     while (tIndex < tokens.size()) {
@@ -82,7 +82,7 @@ SynTreeNode* termsParse() { // matches for the terms
 }
 
 
-SynTreeNode* expressionParse() { // to match an expression
+SynTreeNode* expressionParse() { // matches for addition and subtraction
     SynTreeNode* node = termsParse(); 
 
     while(tIndex < tokens.size()) {
@@ -115,8 +115,8 @@ SynTreeNode* factorParse() { // matches the factors like ( )
     else if (token.val == "(") {
         tIndex++;
         SynTreeNode* node = expressionParse();
-        if (tokens[tIndex].val != ")"){
-            cout << "Syntax error: requires ')'" << endl;
+        if (tokens[tIndex].val != ")"){ // checks to make sure the paranthesis are correct
+            cout << "Syntax error: requires ')'" << endl; // 
             exit(1);
         }
         tIndex++;
