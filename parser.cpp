@@ -45,17 +45,19 @@ SynTreeNode* expressionParse();
 
 void fileInput (const string &filename){
 
-    string line;
     ifstream file(filename);
-
+    if(!file) {
+        cerr << "Error: unable to open file " << filename << endl;
+        exit(1);
+    }
+    
+    string line;
     while (getline(file, line)){
         stringstream ss(line);
-        string val;
-        string type;
-        getline(ss, val, ','); // extracts value before the comma
-        getline(ss, type); // does it after
-
-        tokens.push_back({type, val});
+        string val, type;
+        if(getline(ss, val, ',') && getline(ss, type)) {
+            tokens.push_back({type, val});
+        }
     }
 
     file.close();
@@ -64,15 +66,19 @@ SynTreeNode* termsParse() { // matches for the multiplcation and division
     SynTreeNode* node = factorParse();
 
     while (tIndex < tokens.size()) {
-        Token token = tokens[tIndex];
+        const Token& token = tokens[tIndex];
 
-        if(token.val == "/" || token.val == "*") {
+        if(token.val == "*" || token.val == "/") {
             tIndex++;
+            if(tIndex >= tokens.size()) {
+                cerr << "Syntax error: Expected operand after " << token.val << endl;
+                exit(1);
+            }
             SynTreeNode* right = factorParse();
-            SynTreeNode* Node = new SynTreeNode(nodeType::OPERATOR, token.val);
-            Node->left = node;
-            Node->right = right;
-            node = Node;
+            SynTreeNode* newNode = new SynTreeNode(nodeType::OPERATOR, token.val);
+            newNode->left = node;
+            newNode->right = right;
+            node = newNode;
         }
         else {
             break;
@@ -86,10 +92,15 @@ SynTreeNode* expressionParse() { // matches for addition and subtraction
     SynTreeNode* node = termsParse(); 
 
     while(tIndex < tokens.size()) {
-        Token token = tokens[tIndex];
+      const Token& token = tokens[tIndex];
 
         if(token.val == "+" || token.val == "-") {
             tIndex++;
+
+            if(tIndex >= tokens.size()) {
+                cerr << "Syntax error: Expected operand after " << token.val << endl;
+                exit(1);
+            }
             SynTreeNode* right = termsParse();
             SynTreeNode* Node = new SynTreeNode(nodeType::OPERATOR, token.val);
             Node->left = node;
@@ -104,7 +115,12 @@ SynTreeNode* expressionParse() { // matches for addition and subtraction
 }
 
 SynTreeNode* factorParse() { // matches the factors like ( )
-    Token token = tokens[tIndex];
+    if(tIndex >= tokens.size()) {
+        cerr << "Syntax error: Unexpected end of input" << endl;
+        exit(1);
+    }
+    
+    const Token& token = tokens[tIndex];
 
     if(token.type == "integer"){
         tIndex++;
@@ -112,32 +128,30 @@ SynTreeNode* factorParse() { // matches the factors like ( )
 
     }
 
-    else if (token.val == "(") {
+    if (token.val == "(") {
         tIndex++;
         SynTreeNode* node = expressionParse();
-        if (tokens[tIndex].val != ")"){ // checks to make sure the paranthesis are correct
-            cout << "Syntax error: requires ')'" << endl; // 
+        if (tIndex >= tokens.size() || tokens[tIndex].val != ")"){ // checks to make sure the paranthesis are correct
+            cerr << "Syntax error: requires ')'" << endl; // 
             exit(1);
         }
         tIndex++;
         return node;
     }
-    cout << "Syntax error: unexpected value " << token.val << endl;
+    cerr << "Syntax error: unexpected token " << token.val << "'" << endl;
     exit(1);
 }
 
-void print(SynTreeNode* node, int height = 0){ // prints the ast 
-    if (!node){
-        return;
-    }
+void print(SynTreeNode* node, int depth = 0){ // prints the ast 
+    if (!node) return;
 
-    for (int i = 0; i < height; i++){
+    for (int i = 0; i < depth; i++){
         cout << " ";  
     }
     cout << node->val << endl;
 
-    print(node->left, height+ 1);
-    print(node->right, height+ 1);
+    print(node->left, depth+ 1);
+    print(node->right, depth+ 1);
 }
 
 
@@ -146,8 +160,10 @@ int main() {
 
     fileInput("results.txt");
     SynTreeNode* rootNode = expressionParse();
-    cout << "AST: " << endl;
+    
+    cout << "Abstract Syntax Tree (AST):" << endl;
     print(rootNode);
 
+    delete rootNode; //free allocated memory
     return 0;
 }
